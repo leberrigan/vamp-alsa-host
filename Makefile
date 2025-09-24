@@ -23,6 +23,9 @@ AlsaMinder.o: AlsaMinder.cpp
 RTLSDRMinder.o: RTLSDRMinder.cpp
 	$(CXX) $(CCOPTS) -c -o $@ $<
 
+AIRSPYMinder.o: AIRSPYMinder.cpp
+	$(CXX) $(CCOPTS) -c -o $@ $<
+
 DevMinder.o: DevMinder.cpp
 	$(CXX) $(CCOPTS) -c -o $@ $<
 
@@ -47,7 +50,7 @@ WavFileWriter.o: WavFileWriter.cpp
 vamp-alsa-host.o: vamp-alsa-host.cpp
 	$(CXX) $(CCOPTS) -c -o $@ $<
 
-vamp-alsa-host:  vamp-alsa-host.o TCPListener.o TCPConnection.o Pollable.o PluginRunner.o VampAlsaHost.o AlsaMinder.o WavFileWriter.o DevMinder.o RTLSDRMinder.o
+vamp-alsa-host:  vamp-alsa-host.o TCPListener.o TCPConnection.o Pollable.o PluginRunner.o VampAlsaHost.o AlsaMinder.o WavFileWriter.o DevMinder.o RTLSDRMinder.o AIRSPYMinder.o
 	$(CXX) $(CCOPTS) -o $@ $^ -lasound -lm -ldl -lrt -lvamp-hostsdk -lboost_filesystem -lboost_system -lboost_thread -lfftw3f -lpthread
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

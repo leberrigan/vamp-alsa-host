@@ -25,7 +25,7 @@ public:
   static const int  MAX_CHANNELS          = 2;      // maximum of two channels per device
   static const int  MAX_DEV_QUIET_TIME   = 30;     // 30 second maximum quiet time before we decide an device data stream is dry and try restart it
 
-  string             devName;          // path to device (e.g. hw:CARD=V10 for ALSA, or rtlsdr:/tmp/rtlsdr1:3 for rtl_tcp listening on /tmp/rtlsdr1:3
+  string             devName;          // path to device (e.g. hw:CARD=V10 for ALSA, or rtlsdr:/tmp/rtlsdr1:3 for rtl_tcp listening on /tmp/rtlsdr1:3, or airspy:tmp/airspy1:3 for airspy_tcp listening on /tmp/airspy1:3)
   int                rate;             // sampling rate to supply plugins with
   unsigned int       hwRate;           // sampling rate of hardware device
   unsigned int       numChan;          // number of channels to read from device

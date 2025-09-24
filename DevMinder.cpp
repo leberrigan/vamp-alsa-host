@@ -4,6 +4,7 @@
 
 #include "AlsaMinder.hpp"
 #include "RTLSDRMinder.hpp"
+#include "AIRSPYMinder.hpp"
 
 void DevMinder::delete_privates() {
   if (Pollable::terminating)
@@ -118,6 +119,8 @@ DevMinder * DevMinder::getDevMinder(const string &devName, int rate, unsigned in
   DevMinder * dev;
   if (devName.substr( 0, 7 ) == "rtlsdr:") {
     dev = new RTLSDRMinder(devName, rate, numChan, label, now);
+  } else if (devName.substr( 0, 7 ) == "airspy:") {
+    dev = new AIRSPYMinder(devName, rate, numChan, label, now);
   } else {
     dev = new AlsaMinder(devName, rate, numChan, label, now);
   }
