@@ -91,10 +91,24 @@ int AIRSPYMinder::hw_handleEvents ( struct pollfd *pollfds, bool timedOut) {
     int avail;
     ioctl(airspytcp, FIONREAD, &avail);
     bytesAvail = avail;
-    return (avail + 1) / 2; // hardcoded: 1 byte per sample, two channels (I/Q)
+    return (avail + 1) / 2; // hardcoded: 2 bytes I + 2 bytes Q
   }
   return 0;
 };
+/* void AIRSPYMinder::hw_handleEvents() {
+  if (airspytcp < 0 || timedOut)
+    return 0;
+  if (pollfds->revents & POLLIN) {
+    uint8_t temp[4096];
+    ssize_t bytesRead = recv(airspytcp, temp, sizeof(temp), 0);
+    if (bytesRead > 0) {
+      recvBuffer.insert(recvBuffer.end(), temp, temp + bytesRead);
+      return avail / 4; // hardcoded: 1 byte per sample, two channels (I/Q)
+    }
+  }
+  return 0;
+} */
+
 
 int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimestamp) {
   /*
@@ -124,7 +138,7 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
   } else {
     frameTimestamp = 0;
   }
-
+  
   while (bytesAvail > 0) {
     // try finish filling in the current airspy_stream_segment_hdr_t, if not already full.
 
@@ -149,15 +163,15 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
     int dataBytes = std::min((int) header.size - (int) segi, (int) bytesAvail);
     if (dataBytes > 0) {
       // need to continue copying data
-      uint8_t recvBuffer[MAX_SEGMENT_SIZE]; // or dynamically sized
-      int bytes = recv(airspytcp, recvBuffer, dataBytes, 0);
+     // uint8_t recvBuffer[MAX_SEGMENT_SIZE]; // or dynamically sized
+      int bytes = recv(airspytcp, buf, dataBytes, 0);
 
       if (bytes != dataBytes)
         std::cerr << "Bytes = " << bytes << " but dataBytes = " << dataBytes << std::endl;
 
       // Unlike rtl-sdr, no conversion from 8- to 16-bits required
       int16_t* ebuf = buf;
-      int16_t* src = (int16_t*)recvBuffer;
+      int16_t* src = (int16_t*)buf;
       for (int i = 0; i < bytes / 2; ++i)
           *ebuf++ = *src++;
 
@@ -184,7 +198,7 @@ AIRSPYMinder::getHWRateForRate(int rate) {
   if (rate != 48e3 && rate != 3e6 && rate != 6e6 && rate != 10e6)
     return 1;
 
-  this.hwRate = 6e6; // Only hardware rate that is a multiple of 48khz
+  hwRate = 6e6; // Only hardware rate that is a multiple of 48khz
   
   return 0;
 };

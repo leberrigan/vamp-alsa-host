@@ -51,7 +51,7 @@ vamp-alsa-host.o: vamp-alsa-host.cpp
 	$(CXX) $(CCOPTS) -c -o $@ $<
 
 vamp-alsa-host:  vamp-alsa-host.o TCPListener.o TCPConnection.o Pollable.o PluginRunner.o VampAlsaHost.o AlsaMinder.o WavFileWriter.o DevMinder.o RTLSDRMinder.o AIRSPYMinder.o
-	$(CXX) $(CCOPTS) -o $@ $^ -lasound -lm -ldl -lrt -lvamp-hostsdk -lboost_filesystem -lboost_system -lboost_thread -lfftw3f -lpthread
+	$(CXX) $(CCOPTS) -o $@ $^ -lasound -lm -lrt -lvamp-hostsdk -ldl -lboost_filesystem -lboost_system -lboost_thread -lfftw3f -lpthread
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

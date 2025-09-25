@@ -153,6 +153,7 @@ string DevMinder::toJSON() {
     << "\"stopTimestamp\":" << stopTimestamp << ","
     << "\"running\":" << (stopped ? "false" : "true") << ","
     << "\"hasError\":" << hasError << ","
+    << "\"downSampleFactor\":" << downSampleFactor << ","
     << "\"totalFrames\":" << totalFrames << ","
     << "\"numRawListeners\":" << rawListeners.size()
     << "}";

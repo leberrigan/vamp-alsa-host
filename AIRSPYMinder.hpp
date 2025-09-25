@@ -40,11 +40,11 @@ protected:
 
 public:
 
-  const static int AIRSPY_FRAMES = 16384; // number of complex samples to process per buffer cycle. 
+  const static int AIRSPY_FRAMES = 2048; // number of complex samples to process per buffer cycle. 
                                           // rtl-sdr is set to 2048 for 240ksps, airspy samples at 6msps, 
                                           // so use a larger buffer size to more closely match the time covered per cycle. 
                                           // It's not an exact match because the default segment size for airspy is 65536 bytes (16384 complex samples).
-  const static int MAX_SEGMENT_SIZE = 66000; // Max segment size is AIRSPY_FRAMES * 4, rounded up to allow for buffer overflow
+  const static int MAX_SEGMENT_SIZE = 8192; // Max segment size is AIRSPY_FRAMES * 4, rounded up to allow for buffer overflow
   const static int SAMPLE_SCALE = 1;   // Airspy already provides 16-bit packets so no scaling needed.
                                        // amount by which to multiply signed 8-bit samples to get signed 16-bit sample; for plugins, this
                                        // only matters if downsampling by averaging (and then, only improves precision a bit);
