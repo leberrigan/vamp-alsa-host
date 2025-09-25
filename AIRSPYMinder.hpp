@@ -18,11 +18,11 @@ using namespace std;
 
 extern "C" {
   // struct that airspy_tcp sends down the data stream
-  // each such struct is followed by (size - sizeof(stream_segment_hdr_t) bytes of I/Q sample data.
+  // each such struct is followed by (size - sizeof(airspy_stream_segment_hdr_t) bytes of I/Q sample data.
 typedef struct {
         uint32_t size;   // size of this header plus number of sample bytes before next header
         double ts;       // timestamp of first sample in stream
-} stream_segment_hdr_t;
+} airspy_stream_segment_hdr_t;
 };
 
 class AIRSPYMinder : public DevMinder {
@@ -33,7 +33,7 @@ protected:
   int                    airspytcp;      // fd for connection to airspy_tcp server via unix domain socket; -1 means not connected
   struct sockaddr_un     airspytcpAddr;  // address for airspy_tcp server
   std::string            socketPath;  // filesystem path to airspy_tcp unix domain socket
-  stream_segment_hdr_t   header;      // most recently encountered header in stream
+  airspy_stream_segment_hdr_t   header;      // most recently encountered header in stream
   bool                   headerValid; // is content of latestHeader valid?
   unsigned int           segi;        // how many bytes from this segment (header + data) have been processed, including those from the header
   unsigned int           bytesAvail;  // bytes available in recv buffer, from latest ioctl()

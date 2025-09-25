@@ -105,7 +105,7 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
     and there is no alignment to stream segment boundaries as we're using a stream-oriented socket protocol
 
     So we perform one or more recv()'s to completely use up the available byte count (recorded in the
-    most recent call to hw_handleEvents), removing any stream_segment_hdr_t structures; the latest such
+    most recent call to hw_handleEvents), removing any airspy_stream_segment_hdr_t structures; the latest such
     struct is saved for use of its timestamp and byte count.  We return the count of frames copied to
     buf, which will not exceed numFrames.
 
@@ -116,19 +116,19 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
   // getting a separate estimate for each segment header in the current buffer.
 
   int numTSest = 0;
-  if (segi >= sizeof(stream_segment_hdr_t)) {
+  if (segi >= sizeof(airspy_stream_segment_hdr_t)) {
     // we already have a header for the current segment, so
     // estimate the timestamp of the first sample to be copied to the buffer
-    frameTimestamp = header.ts + ((segi - sizeof(stream_segment_hdr_t)) / 2.0) / hwRate;
+    frameTimestamp = header.ts + ((segi - sizeof(airspy_stream_segment_hdr_t)) / 2.0) / hwRate;
     numTSest = 1;
   } else {
     frameTimestamp = 0;
   }
 
   while (bytesAvail > 0) {
-    // try finish filling in the current stream_segment_hdr_t, if not already full.
+    // try finish filling in the current airspy_stream_segment_hdr_t, if not already full.
 
-    int hdrBytes  = std::min((int) sizeof(stream_segment_hdr_t) - (int) segi, (int) bytesAvail);
+    int hdrBytes  = std::min((int) sizeof(airspy_stream_segment_hdr_t) - (int) segi, (int) bytesAvail);
     if (hdrBytes > 0) {
       // need to try finish filling in header
       int bytes = recv(airspytcp, ((char *) (& header)) + segi, hdrBytes, 0);
@@ -137,7 +137,7 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
       bytesAvail -= bytes;
       segi +=  bytes;
       // if new header has been obtained, add a new estimate of the timestamp for the first sample in the buffer
-      if (segi == sizeof(stream_segment_hdr_t)) {
+      if (segi == sizeof(airspy_stream_segment_hdr_t)) {
         frameTimestamp += header.ts - (sampleBytesCopied / 2.0) / hwRate;
         ++numTSest;
       }
