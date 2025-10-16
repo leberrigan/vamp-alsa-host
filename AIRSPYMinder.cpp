@@ -169,11 +169,13 @@ int AIRSPYMinder::hw_getFrames (int16_t *buf, int numFrames, double & frameTimes
       if (bytes != dataBytes)
         std::cerr << "Bytes = " << bytes << " but dataBytes = " << dataBytes << std::endl;
 
-      // Unlike rtl-sdr, no conversion from 8- to 16-bits required
+      // Unlike rtl-sdr, no conversion from unsigned to signed required
+      // scale the samples from 12-bit to 16-bit domain
+      // working from left to right; no offset or reinterpretation needed
       int16_t* ebuf = buf;
-      int16_t* src = (int16_t*)buf;
-      for (int i = 0; i < bytes / 2; ++i)
-          *ebuf++ = *src++;
+      for (int i = 0; i < bytes / 2; ++i, ++ebuf)
+        *ebuf = (*ebuf) * SAMPLE_SCALE; // scale from ±2048 to ±32768 if SAMPLE_SCALE = 16
+
 
       bytesAvail -= bytes;
       segi +=  bytes;

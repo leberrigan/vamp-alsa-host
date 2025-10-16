@@ -65,6 +65,7 @@ void DevMinder::removePluginRunner(std::string &label) {
 
 void DevMinder::addRawListener(string &label, int downSampleFactor, bool writeWavHeader, bool downSampleUseAvg) {
 
+  
   boost::shared_ptr < Pollable > sptr;
   rawListeners[label] = sptr = Pollable::lookupByNameShared(label);
   if (rawListeners.size() == 1) {
@@ -109,6 +110,7 @@ DevMinder::DevMinder(const string &devName, int rate, unsigned int numChan, unsi
   hasError(0),
   demodFMForRaw(false),
   demodFMLastTheta(0),
+  downSampleUseAvg(true),
   sampleBuf(buffSize * numChan)
 {
 };
@@ -154,6 +156,7 @@ string DevMinder::toJSON() {
     << "\"running\":" << (stopped ? "false" : "true") << ","
     << "\"hasError\":" << hasError << ","
     << "\"downSampleFactor\":" << downSampleFactor << ","
+    << "\"downSampleUseAvg\":" << downSampleUseAvg << ","
     << "\"totalFrames\":" << totalFrames << ","
     << "\"numRawListeners\":" << rawListeners.size()
     << "}";
@@ -198,19 +201,44 @@ void DevMinder::handleEvents ( struct pollfd *pollfds, bool timedOut, double tim
 
   totalFrames += avail;
 
+  
   if (avail > 0) {
 
     // FIXME: assumes interleaved channels
     // now downsample sampleBuf, using the running accumulator.
     // We downsample in-place, keeping track of the destination
     // index in downSampleAvail;
-
+    
+    const int INF = 0x7fffffff; // Max int
     int downSampleAvail = avail;
 
+
+/*     /// LOGGING
+    int16_t *ptr = &sampleBuf[0];
+    int n = avail * numChan;
+    int16_t maxv = 0, minv = 0;
+    int clipped = 0;
+    for (int i=0;i<n;++i) {
+      int16_t v = ptr[i];
+      if (abs(v) > maxv) maxv = abs(v);
+      if (v == 0x7FFF || v == 0x8000) ++clipped;
+      if (v < minv) minv = v;
+    }
+    uint64_t t_us = (uint64_t)(frameTimestamp * 1e6); // adjust type/units if needed
+    if (clipped > 0) 
+      std::cerr << "DEV_CB,ts_us="<<t_us<<",avail="<<avail<<",numChan="<<numChan
+                <<",max_abs="<<maxv<<",min="<<minv<<",clipped="<<clipped
+                <<",devLabel="<<label<<std::endl;
+    /// END LOGGING */
+    
     if (downSampleFactor > 1) {
+      int minAvail = INF; 
       for (unsigned j = 0; j < numChan; ++j) {
-        downSampleAvail = 0; // works the same for all channels
+        // downSampleAvail = 0; // works the same for all channels
+        int thisAvail = 0;
         if (downSampleUseAvg) {
+          
+//          std::cerr << "downSampleUseAvg: " << downSampleUseAvg << "devLabel:" << label << std::endl;
           int16_t * rs = & sampleBuf[j];
           int16_t * ds = rs;
           for (int i=0; i < avail; ++i) {
@@ -223,10 +251,27 @@ void DevMinder::handleEvents ( struct pollfd *pollfds, bool timedOut, double tim
               *ds = downSample;
               downSampleAccum[j] -= downSample * downSampleFactor;
               ds += numChan;
-              ++ downSampleAvail;
+              ++ thisAvail;
             }
           }
         } else {
+
+          int rs_stride = numChan;
+          int16_t * rs = &sampleBuf[j];
+          int16_t * ds = rs;
+          for (int out = 0; out < avail / downSampleFactor; ++out) {
+            int16_t peak = 0;
+            for (int k = 0; k < downSampleFactor; ++k) {
+              int16_t v = rs[k * rs_stride];
+              if (abs(v) > peak) peak = abs(v);
+            }
+            *ds = peak; // or keep sign if you prefer max-abs with sign
+            ds += numChan;
+            rs += downSampleFactor * rs_stride;
+            ++thisAvail;
+          }
+
+/* 
           int16_t * rs = & sampleBuf[j];
           int16_t * ds = rs;
           for (int i=0; i < avail; ++i) {
@@ -234,12 +279,14 @@ void DevMinder::handleEvents ( struct pollfd *pollfds, bool timedOut, double tim
               downSampleCount[j] = downSampleFactor;
               *ds = *rs;
               ds += numChan;
-              ++ downSampleAvail;
+              ++ thisAvail;
             }
             rs += numChan;
-          }
+          } */
         }
+        if (thisAvail < minAvail) minAvail = thisAvail;
       }
+      downSampleAvail = (minAvail == INF) ? 0 : minAvail;
     }
     // if requested, do FM demodulation of the downsamples,
     if (numChan == 2 && demodFMForRaw) {
@@ -259,7 +306,25 @@ void DevMinder::handleEvents ( struct pollfd *pollfds, bool timedOut, double tim
         sampleBuf[i] = roundf(dthetaScale * dtheta);
       }
     }
+/*     int perChannelOut[numChan] = {0};
 
+    // now compute max_post
+    int16_t *outBase =  &sampleBuf[0]; // downsampled output lives at the start of sampleBuf
+    int max_post = 0;
+    int outFrames = downSampleAvail;
+    int totalOutSamples = outFrames * numChan;
+    for (int i = 0; i < totalOutSamples; ++i) {
+      int16_t v = outBase[i];
+      int abs_v = (v < 0) ? -v : v;
+      if (abs_v > max_post) max_post = abs_v;
+    }
+
+
+    uint64_t t_us = (uint64_t)(frameTimestamp * 1e6);
+    std::cerr << "DS_CB,ts_us="<<t_us<<",avail_in="<<avail<<",downSampleFactor="<<downSampleFactor
+              <<",downAvail="<<downSampleAvail<<",devLabel="<<label;
+    for (int j=0;j<numChan && j<4;++j) std::cerr << ",ch"<<j<<"_out="<<perChannelOut[j];
+    std::cerr << ",max_post="<<max_post<<std::endl; */
 
     // there are now downSampleAvail samples, stored in sampleBuf[0..downSampleAvail * numChan - 1]
 
