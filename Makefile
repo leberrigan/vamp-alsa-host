@@ -1,6 +1,7 @@
 CCOPTS := -DRPI -I. -Wall -fPIC -ftree-vectorize -ffast-math -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=hard
-
-CXX := g++
+CXX ?= g++
+STRIP?=strip
+DESTDIR?=/
 
 .PHONY: all clean debug install
 
@@ -14,8 +15,9 @@ clean:
 	rm -f *.o vamp-alsa-host
 
 install: vamp-alsa-host
-	strip vamp-alsa-host
-	cp vamp-alsa-host /usr/bin
+	$(STRIP) vamp-alsa-host
+	install -d $(DESTDIR)/usr/bin
+	install -m 755 vamp-alsa-host $(DESTDIR)/usr/bin
 
 AlsaMinder.o: AlsaMinder.cpp
 	$(CXX) $(CCOPTS) -c -o $@ $<

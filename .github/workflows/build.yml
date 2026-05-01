@@ -1,0 +1,16 @@
+name: Build package
+
+on: [push]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build-deb:
+    uses: tve/sensorgnome-build/.github/workflows/generate-deb.yml@pimod
+    with:
+      dependency: libpam0g-dev
+    secrets:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
